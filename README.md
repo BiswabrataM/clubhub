@@ -76,6 +76,12 @@ go run server.go
 
 
 ### CURLs
+## Check if server health
+curl -X GET
+'http://localhost:8080/apis/v1/health'
+--header 'Accept: /' \
+
+
 ## GET existing data for hotelchain
 curl -X GET
 'http://localhost:8080/apis/v1/hotelchain/?managementCompanyName=My%20entreprise%20holding&franchiseName=Marriot'
