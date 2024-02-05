@@ -13,7 +13,7 @@ func InitializeApis(app *echo.Echo) {
 
 	v1Routes := app.Group("/apis/v1")
 
-	v1HotelRoutes := v1Routes.Group("/hotels")
+	v1HotelRoutes := v1Routes.Group("/hotelchain")
 	InitializeHotelApis(v1HotelRoutes)
 
 	log.Println("APIs: initializing /apis/v1/health API route")

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"clubhub/configs"
+
 	"clubhub/src/apis/routes"
 	"clubhub/src/databases"
 	"log"
@@ -19,11 +21,10 @@ func main() {
 	echoApp.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Output: os.Stdout,
 	}))
-	log.Println("Logger: initialized echo logger")
 	routes.InitializeApis(echoApp)
 	databases.InitializePgDb()
 
-	echoApp.Start(":8080")
+	echoApp.Start(configs.AppPort)
 
 	log.Println("initialized app listening to 8080")
 }

@@ -25,9 +25,9 @@ The project follows a typical Go application structure with separate packages fo
         +--------+-------------+                  +--------+-------+
                  v                                      v
         +----------------+                         +----------------+
-        | Model          |                         | Repository     |
-        | (Database      |                         | (Third-party   |
-        | Structures)    |                         | External, etc.)|
+        | Model          |                         | Third-party    |
+        | (Database      |                         | External, etc. |
+        | Structures)    |                         |                |
         +--------+-------+                         +--------+-------+
  
 
@@ -77,109 +77,23 @@ go run server.go
 
 ### CURLs
 ## GET existing data for hotelchain
-curl  -X GET \
-  'http://localhost:8080/apis/v1/hotels/?managementCompanyName=My%20entreprise%20holding&franchiseName=Marriot' \
-  --header 'Accept: */*' \
+curl -X GET
+'http://localhost:8080/apis/v1/hotelchain/?managementCompanyName=My%20entreprise%20holding&franchiseName=Marriot'
+--header 'Accept: /' \
+
 
 ## Add data for hotelchain
-curl  -X POST \
-  'http://localhost:8080/apis/v1/hotelchain/' \
-  --header 'Accept: */*' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-   "company": {
-       "owner": {
-           "first_name": "josh",
-           "last_name": "porch",
-           "contact": {
-               "email": "josh@my-enterprise-holding.org",
-               "phone": "+1 800 465 6574",
-               "location": {
-                   "city": "Toronto",
-                   "country": "Canada",
-                   "address": "14 bulevar",
-                   "zip_code": "N6D 92A"
-               }
-           }
-       },
-       "informacion": {
-           "name": "My entreprise holding",
-           "tax_number": "DD79654121",
-           "location": {
-               "city": "Toronto",
-               "country": "Canada",
-               "address": "78 Rober ST",
-               "zip_code": "F9A 92O"
-           }
-       },
+curl -X POST
+'http://localhost:8080/apis/v1/hotelchain/'
+--header 'Accept: /'
+--header 'Content-Type: application/json'
+--data-raw '{ "company": { "owner": { "first_name": "josh", "last_name": "porch", "contact": { "email": "josh@my-enterprise-holding.org", "phone": "+1 800 465 6574", "location": { "city": "Toronto", "country": "Canada", "address": "14 bulevar", "zip_code": "N6D 92A" } } }, "informacion": { "name": "My entreprise holding", "tax_number": "DD79654121", "location": { "city": "Toronto", "country": "Canada", "address": "78 Rober ST", "zip_code": "F9A 92O" } },
 
-   "franchises": [
-       {
-           "name": "Park royal",
-           "url": "www.park-royalhotels.com",
-           "location": {
-               "city": "Cancun",
-               "Country": "Mexico",
-               "Address": "Libertadores av 40 - 20",
-               "zip_code": "45971"
-           }
-       },
-       {
-           "name": "Marriot",
-           "url": "www.marriott.com",
-           "location": {
-               "city": "Miami",
-               "Country": "United States",
-               "Address": "35 Tom st 18 bridge av",
-               "zip_code": "115745"
-           }
-       }
-   ]
-   }
-}
-'
+"franchises": [ { "name": "Park royal", "url": "www.park-royalhotels.com", "location": { "city": "Cancun", "Country": "Mexico", "Address": "Libertadores av 40 - 20", "zip_code": "45971" } }, { "name": "Marriot", "url": "www.marriott.com", "location": { "city": "Miami", "Country": "United States", "Address": "35 Tom st 18 bridge av", "zip_code": "115745" } } ] } } '
 
 ## Update existing data for hotelchain
-curl  -X PATCH \
-  'http://localhost:8080/apis/v1/hotels/' \
-  --header 'Accept: */*' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-  "company": {
-    "id": 1,
-    "name": "UpdatedCompanyName",
-    "taxNumber": "UpdatedTaxNumber",
-    "address": "UpdatedAddress",
-    "zipCode": "UpdatedZipCode",
-    "locationId": 2,
-    "ownerId": 3,
-    "owner": {
-      "id": 1,
-      "firstName": "UpdatedFirstName",
-      "lastName": "UpdatedLastName",
-      "contact": {
-        "email": "updated@example.com",
-        "phone": "9876543210",
-        "location": {
-          "city": "UpdatedCity",
-          "country": "UpdatedCountry",
-          "address": "UpdatedOwnerAddress",
-          "zipCode": "UpdatedOwnerZipCode"
-        }
-      }
-    },
-    "franchises": [
-      {
-        "id": 1,
-        "name": "UpdatedFranchiseName",
-        "url": "UpdatedFranchiseURL",
-        "location": {
-          "city": "UpdatedFranchiseCity",
-          "country": "UpdatedFranchiseCountry",
-          "address": "UpdatedFranchiseAddress",
-          "zipCode": "UpdatedFranchiseZipCode"
-        }
-      }
-    ]
-  }
-}'
+curl -X PATCH
+'http://localhost:8080/apis/v1/hotelchain/'
+--header 'Accept: /'
+--header 'Content-Type: application/json'
+--data-raw '{ "company": { "id": 1, "name": "UpdatedCompanyName", "taxNumber": "UpdatedTaxNumber", "address": "UpdatedAddress", "zipCode": "UpdatedZipCode", "locationId": 2, "ownerId": 3, "owner": { "id": 1, "firstName": "UpdatedFirstName", "lastName": "UpdatedLastName", "contact": { "email": "updated@example.com", "phone": "9876543210", "location": { "city": "UpdatedCity", "country": "UpdatedCountry", "address": "UpdatedOwnerAddress", "zipCode": "UpdatedOwnerZipCode" } } }, "franchises": [ { "id": 1, "name": "UpdatedFranchiseName", "url": "UpdatedFranchiseURL", "location": { "city": "UpdatedFranchiseCity", "country": "UpdatedFranchiseCountry", "address": "UpdatedFranchiseAddress", "zipCode": "UpdatedFranchiseZipCode" } } ] } }'
