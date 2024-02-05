@@ -6,14 +6,14 @@ import (
 )
 
 type ownerInfo struct {
-	Id         uint   `json:"id"`
-	FirstName  string `json:"firstName"`
-	LastName   string `json:"lastName"`
-	Email      string `json:"email"`
-	Phone      string `json:"phone"`
-	Address    string `json:"address"`
-	ZipCode    string `json:"zipCode"`
-	LocationId uint   `json:"locationId"`
+	Id         uint
+	FirstName  string
+	LastName   string
+	Email      string
+	Phone      string
+	Address    string
+	ZipCode    string
+	LocationId uint
 }
 
 func CreateOwner(ownerInfo models.Owner) (uint, error) {

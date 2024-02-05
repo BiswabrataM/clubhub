@@ -65,12 +65,10 @@ The project follows a typical Go application structure with separate packages fo
 
 
 ### Run server
-## docker
-docker-compose up -d
-docker build -t <your-image-name> .
-docker run -p 8080:8080 <your-image-name>
+# docker
+docker-compose up --build -d
 
-## terminal
+# terminal
 go run server.go
 
 

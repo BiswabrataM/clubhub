@@ -52,57 +52,80 @@ type FranchiseInfo struct {
 	WebsiteAvailable bool
 }
 
-func AnalyzeFranchiseWebsite(franchiseURL string) (DomainInfo, FranchiseInfo, error) {
-	var domainInfo DomainInfo
+func AnalyzeFranchiseWebsite(franchiseURL string) ([]DomainInfo, FranchiseInfo, error) {
+	var domainInfoList []DomainInfo
 	var franchiseInfo FranchiseInfo
+
+	iconUri, err := ExtractLogo(franchiseURL)
+	franchiseInfo.IconUri = iconUri
+	franchiseInfo.WebsiteAvailable = true
+	if err != nil {
+		franchiseInfo.IconUri = ""
+		franchiseInfo.WebsiteAvailable = false
+	}
 
 	sslDetail, err := GetSSLInfo(franchiseURL)
 	if err != nil {
-		return domainInfo, franchiseInfo, err
+		return domainInfoList, franchiseInfo, err
+	}
+	franchiseInfo.Protocol = sslDetail.Protocol
+
+	for _, endpoint := range sslDetail.Endpoints {
+
+		endpointInfo, err := GetDomainInfo(endpoint.IPAddress)
+		if err != nil {
+			return domainInfoList, franchiseInfo, err
+		}
+
+		domainInfo := DomainInfo{
+			IpAddress:    endpoint.IPAddress,
+			ServerName:   endpoint.ServerName,
+			Creation:     endpointInfo.Creation,
+			Expiry:       endpointInfo.Expiry,
+			RegisteredTo: endpointInfo.RegisteredTo,
+		}
+
+		domainInfoList = append(domainInfoList, domainInfo)
 	}
 
-	iconUri, err := ExtractLogo(franchiseURL)
-	if err != nil {
-		return domainInfo, franchiseInfo, err
-	}
+	return domainInfoList, franchiseInfo, nil
 
-	endpointInfo, err := GetDomainInfo(sslDetail.Endpoints[0].IPAddress)
-	if err != nil {
-		return domainInfo, franchiseInfo, err
-	}
-
-	domainInfo = DomainInfo{
-		IpAddress:    sslDetail.Endpoints[0].IPAddress,
-		ServerName:   sslDetail.Endpoints[0].ServerName,
-		Creation:     endpointInfo.Creation,
-		Expiry:       endpointInfo.Expiry,
-		RegisteredTo: endpointInfo.RegisteredTo,
-	}
-
-	franchiseInfo = FranchiseInfo{
-		IconUri:          iconUri,
-		Protocol:         sslDetail.Protocol,
-		WebsiteAvailable: true,
-	}
-
-	return domainInfo, franchiseInfo, nil
 }
 
 func GetSSLInfo(franchiseURL string) (SSLLabsResponse, error) {
 	var result SSLLabsResponse
 
-	reqUri := fmt.Sprintf("%s/%s?%s=%s", configs.SSLlabBaseUri, configs.SSLlabAnalyzeUri, configs.SSLlabQueryHost, franchiseURL)
-	response, err := http.Get(reqUri)
-	if err != nil {
-		return result, err
+	domainRegex := regexp.MustCompile(`^(?:https?://)?(?:www\.)?([^/]+)`)
+	matches := domainRegex.FindStringSubmatch(franchiseURL)
+	if len(matches) < 2 {
+		return result, fmt.Errorf("unable to extract domain from the URI")
 	}
-	defer response.Body.Close()
+	domain := matches[1]
 
-	err = json.NewDecoder(response.Body).Decode(&result)
-	if err != nil {
-		return result, err
+	var retries int
+	for retries = 0; retries < 3; retries++ {
+		log.Printf("api: fetching SSL details, try:%v", retries)
+		reqUri := fmt.Sprintf("%s/%s?%s=%s", configs.SSLlabBaseUri, configs.SSLlabAnalyzeUri, configs.SSLlabQueryHost, domain)
+		response, err := http.Get(reqUri)
+		if err != nil {
+			continue
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			err = json.NewDecoder(response.Body).Decode(&result)
+			if err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+
 	}
 
+	if retries == 3 {
+		return result, fmt.Errorf("maximum retries reached")
+	}
+	log.Printf("api: fetched SSL details, host: %v", result.Host)
 	return result, nil
 }
 
@@ -116,21 +139,13 @@ func GetDomainInfo(ipAddress string) (EndpointInfo, error) {
 	var endpointInfo EndpointInfo
 
 	whoisResponse, err := whois.Whois(ipAddress)
-	if err == nil {
-		// fmt.Println(whoisResponse)
+	if err != nil {
+		log.Panicf("util: failed to fetch domain/ipaddress related info")
+		return endpointInfo, err
 	}
 
-	// Define regular expressions for capturing creation date, expiry date, and registrant information
 	creationDateRegex := regexp.MustCompile(`RegDate:\s+(\d{4}-\d{2}-\d{2})`)
-	expiryDateRegex := regexp.MustCompile(`Updated:\s+(\d{4}-\d{2}-\d{2})`)
-	registrantInfoRegex := regexp.MustCompile(`OrgName:\s+(.+)`)
-
-	// Find matches in the WHOIS response
 	creationDateMatches := creationDateRegex.FindStringSubmatch(whoisResponse)
-	expiryDateMatches := expiryDateRegex.FindStringSubmatch(whoisResponse)
-	registrantInfoMatches := registrantInfoRegex.FindStringSubmatch(whoisResponse)
-
-	// Extract matched information
 	if len(creationDateMatches) == 2 {
 		creationDateStr := creationDateMatches[1]
 		creationDate, err := time.Parse("2006-01-02", creationDateStr)
@@ -140,6 +155,8 @@ func GetDomainInfo(ipAddress string) (EndpointInfo, error) {
 		endpointInfo.Creation = creationDate.Format("2006-01-02")
 	}
 
+	expiryDateRegex := regexp.MustCompile(`Updated:\s+(\d{4}-\d{2}-\d{2})`)
+	expiryDateMatches := expiryDateRegex.FindStringSubmatch(whoisResponse)
 	if len(expiryDateMatches) == 2 {
 		expiryDateStr := expiryDateMatches[1]
 		expiryDate, err := time.Parse("2006-01-02", expiryDateStr)
@@ -149,6 +166,8 @@ func GetDomainInfo(ipAddress string) (EndpointInfo, error) {
 		endpointInfo.Expiry = expiryDate.Format("2006-01-02")
 	}
 
+	registrantInfoRegex := regexp.MustCompile(`OrgName:\s+(.+)`)
+	registrantInfoMatches := registrantInfoRegex.FindStringSubmatch(whoisResponse)
 	if len(registrantInfoMatches) == 2 {
 		endpointInfo.RegisteredTo = strings.TrimSpace(registrantInfoMatches[1])
 	}
@@ -160,6 +179,8 @@ func ExtractLogo(franchiseURL string) (string, error) {
 	c := colly.NewCollector()
 	var websiteUri string = "https://" + franchiseURL
 	var iconURL string
+
+	log.Printf("util: extracting icon details from franchise website, uri: %v", franchiseURL)
 
 	c.OnHTML("link[rel='icon'], link[rel='apple-touch-icon'], link[rel='shortcut icon']", func(e *colly.HTMLElement) {
 		href := e.Attr("href")

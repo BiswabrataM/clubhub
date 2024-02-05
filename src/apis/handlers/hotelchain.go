@@ -6,7 +6,6 @@ import (
 	"clubhub/src/databases/repositories"
 	"clubhub/src/services"
 	"clubhub/src/utils/dtos"
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -131,8 +130,7 @@ func CreateHotel(c echo.Context) error {
 		LocationId: companyLocationId,
 		OwnerId:    ownerId,
 	}
-
-	fmt.Println("---- >> ----", companyInfo)
+	log.Printf("db.add: compnay " + companyInfo.Name)
 
 	companyId, err := repositories.CreateCompany(companyInfo)
 	if err != nil {
@@ -143,6 +141,8 @@ func CreateHotel(c echo.Context) error {
 	}
 
 	for _, franchisePayload := range createRequest.Company.Franchises {
+		log.Printf("db.add: franchise " + franchisePayload.Name)
+
 		franchiseLocationId, err := repositories.GetOrAddLocation(franchisePayload.Location.City, franchisePayload.Location.Country)
 		if err != nil {
 			tx.Rollback()
@@ -150,11 +150,11 @@ func CreateHotel(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create or retrieve franchise location"})
 		}
 
-		endpointDetails, fInfo, err := services.AnalyzeFranchiseWebsite(franchisePayload.URL)
+		endpointDetailsList, fInfo, err := services.AnalyzeFranchiseWebsite(franchisePayload.URL)
 		if err != nil {
 			tx.Rollback()
-			log.Error("Failed to create or retrieve franchise location:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create or retrieve franchise location"})
+			log.Error("Failed to analyze franchise website:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to analyze franchise website", "details": err.Error()})
 		}
 
 		franchiseInfo := repositories.FranchiseInfo{
@@ -176,19 +176,22 @@ func CreateHotel(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create franchise"})
 		}
 
-		var endpointInfo = repositories.EndpointInfo{
-			FranchiseId:  franchiseId,
-			IpAddress:    endpointDetails.IpAddress,
-			ServerName:   endpointDetails.ServerName,
-			Creation:     endpointDetails.Creation,
-			Expiry:       endpointDetails.Expiry,
-			RegisteredTo: endpointDetails.RegisteredTo,
-		}
-		_, err = repositories.AddEndpoint(endpointInfo)
-		if err != nil {
-			tx.Rollback()
-			log.Error("Failed to create franchise:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create endpoint"})
+		for _, endpointDetails := range endpointDetailsList {
+			endpointInfo := repositories.EndpointInfo{
+				FranchiseId:  franchiseId,
+				IpAddress:    endpointDetails.IpAddress,
+				ServerName:   endpointDetails.ServerName,
+				Creation:     endpointDetails.Creation,
+				Expiry:       endpointDetails.Expiry,
+				RegisteredTo: endpointDetails.RegisteredTo,
+			}
+
+			_, err = repositories.AddEndpoint(endpointInfo)
+			if err != nil {
+				tx.Rollback()
+				log.Error("Failed to create endpoint:", err)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create endpoint"})
+			}
 		}
 	}
 
