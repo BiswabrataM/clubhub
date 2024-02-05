@@ -9,3 +9,14 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+
+  go-app:
+    build:
+      context: .
+    container_name: my_go_app
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/go4?sslmode=disable
+    ports:
+      - "8080:8080"

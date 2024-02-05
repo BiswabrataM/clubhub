@@ -1,3 +1,3 @@
 package configs
 
-var AppPort string = ":8000"
+var AppPort string = ":8080"
