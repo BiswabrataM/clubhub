@@ -9,7 +9,7 @@ type DBConfig struct {
 }
 
 var PgConfig = DBConfig{
-	Host:   "localhost",
+	Host:   "host.docker.internal",
 	Port:   5432,
 	User:   "postgres",
 	Pass:   "postgres",
