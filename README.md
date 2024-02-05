@@ -80,13 +80,11 @@ go run server.go
 curl  -X GET \
   'http://localhost:8080/apis/v1/hotels/?managementCompanyName=My%20entreprise%20holding&franchiseName=Marriot' \
   --header 'Accept: */*' \
-  --header 'User-Agent: Thunder Client (https://www.thunderclient.com)'
 
 ## Add data for hotelchain
 curl  -X POST \
   'http://localhost:8080/apis/v1/hotelchain/' \
   --header 'Accept: */*' \
-  --header 'User-Agent: Thunder Client (https://www.thunderclient.com)' \
   --header 'Content-Type: application/json' \
   --data-raw '{
    "company": {
@@ -145,7 +143,6 @@ curl  -X POST \
 curl  -X PATCH \
   'http://localhost:8080/apis/v1/hotels/' \
   --header 'Accept: */*' \
-  --header 'User-Agent: Thunder Client (https://www.thunderclient.com)' \
   --header 'Content-Type: application/json' \
   --data-raw '{
   "company": {
