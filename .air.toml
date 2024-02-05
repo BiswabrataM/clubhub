@@ -1,0 +1,14 @@
+# air.toml
+
+# Application settings
+root = "."  # The root directory of your project
+tmp_dir = "tmp"
+build_cmd = "go build -o ./tmp/main ."
+
+# Autobuild settings
+include_ext = ["go"]
+exclude_dir = ["tmp", "vendor"]
+
+# Runner settings
+[runner]
+  args = ["-p", "8000"]  # Additional command-line arguments for your application
